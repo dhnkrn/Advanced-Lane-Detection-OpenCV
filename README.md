@@ -50,10 +50,11 @@ Images before and after correction distortion.
 A combination of color filtering in the HSV color space and gradient thresholding using a Sobel filter is applied to identify lanes. The identified lane pixels are max-thresholded to produce a binary image.
 
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/hsv.png?raw=true)
-![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/gray.png?raw=true)
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/s_channel.png?raw=true)
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/sobel.png?raw=true)
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/thresholded_combination.png?raw=true)
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/thresholded_combination_1.png?raw=true)
+
 #### 3. Perspective Transform
 
 The code for my perspective transform includes a function called `transform_perspective()`, which appears in the code cell 12 of the IPython notebook.  The function reads an image of a straight road with two visible lanes. Four pixel co-ordinates of the lane lines forming a trapezium are chosen and then spatially transformed to make a rectangle. The idea is to eliminate the camera perspective on the image. This, like camera calibration, is dependent on the camera setup and the coefficients are calculated just once. The calculated co-efficient are then reused in the pipeline to transform each frame.
@@ -73,6 +74,8 @@ This is an interesting part of the pipeline that needs relatively more optimizat
 3) After sliding the filter from the bottom to top, two sets of points one for each lane is then used to fit a 2nd order polynomial.
 4) A runnning average of the polynomial co-efficients is used to filter out noise. The final detected lane is combination of past history and the current detection. 
 5) The current measurement is outright rejected if it is 1.3 standard deviations away from the mean. In this case, the detection is solely based on the past data.
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/histogram.png?raw=true)
 
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/lane_detection.png?raw=true)
 	
