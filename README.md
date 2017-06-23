@@ -1,19 +1,7 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
-
-
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
-
-Creating a great writeup:
+## README
 ---
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
+**Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
 
@@ -26,10 +14,88 @@ The goals / steps of this project are the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
+[//]: # (Image References)
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+[image1]: ./examples/undistort_output.png "Undistorted"
+[image2]: ./test_images/test1.jpg "Road Transformed"
+[image3]: ./examples/binary_combo_example.jpg "Binary Example"
+[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
+[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
+[image6]: ./examples/example_output.jpg "Output"
+[video1]: ./project_video.mp4 "Video"
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+### Camera Calibration
+
+Camera calibration is a required step correct for distortion introduced by the camera assembly and as such is specific to a particular camera. The approach for calibration is to take photos of a set of objects whose pixels positions are known and then quantify how much distortion the camera has introduced in the images. The code for this step is contained in the code cell 3 of the IPython notebook "./solution.ipynb"
+
+The reference object is a chessboard and the reference "object points" are the (x, y, z) coordinates of the chessboard corners. Here, the chessboard is fixed on the (x, y) plane with z=0. The object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time chessboard corners are detected in a test calibration image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection. Here's a calibration test image with the detected corners overlayed.
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/camera_calibration.png?raw=true)
+
+The output `imgpoints` is fed to `cv2.calibrateCamera()` function to compute the camera calibration and distortion coefficients. Correcting distortion using the computed coefficients with `cv2.undistort()` looks like this. The difference in edge pixels is easy to notice.
+ ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/distortion_correction.png?raw=true)
+
+### Pipeline for image processing individual frames
+
+#### 1. Distortion Correction
+
+Images before and after correction distortion.
+
+ ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/distortion_correction2.png?raw=true)
+
+
+#### 2. Color transformation and gradients
+
+A combination of color filtering in the HSV color space and gradient thresholding using a Sobel filter is applied to identify lanes. The identified lane pixels are max-thresholded to produce a binary image.
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/hsv.png?raw=true)
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/gray.png?raw=true)
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/s_channel.png?raw=true)
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/sobel.png?raw=true)
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/thresholded_combination.png?raw=true)
+#### 3. Perspective Transform
+
+The code for my perspective transform includes a function called `transform_perspective()`, which appears in the code cell 12 of the IPython notebook.  The function reads an image of a straight road with two visible lanes. Four pixel co-ordinates of the lane lines forming a trapezium are chosen and then spatially transformed to make a rectangle. The idea is to eliminate the camera perspective on the image. This, like camera calibration, is dependent on the camera setup and the coefficients are calculated just once. The calculated co-efficient are then reused in the pipeline to transform each frame.
+
+```python
+   src = np.float32([[325,650],[990,650],[420,580],[880,580]])
+   dst = np.float32([[300,670],[1000,670],[300,600],[993,600]])
+```
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/perspective_transform.png?raw=true)
+
+#### 4. Lane Detection
+
+This is an interesting part of the pipeline that needs relatively more optimization than the other stages. A square filter of 1's is slided across the frame bottom-to-top and left-to-right to calculate the number of 'high' pixels in the thresholded binary input image. The lane line pixels are expected to be thresholded to 'high' in the color and gradient filtering steps. The algorithm here has to basically pixels that not lane lines. I use a combination of techniques to identify lane pixels.
+1) Lane pixels are brighter in the thresholded binary image and the pixels appear next to each other. This means the cross-correlation with a 2d filter of 1's will be high.
+2) Simplify lane line identification by only choosing one point per left and right lane along the horizontal. The chose point representing the lanes has the highest cross-correlation in the corresponding half of the image.
+3) After sliding the filter from the bottom to top, two sets of points one for each lane is then used to fit a 2nd order polynomial.
+4) A runnning average of the polynomial co-efficients is used to filter out noise. The final detected lane is combination of past history and the current detection. 
+5) The current measurement is outright rejected if it is 1.3 standard deviations away from the mean. In this case, the detection is solely based on the past data.
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/lane_detection.png?raw=true)
+	
+
+
+#### 5.Radius of curvature and off-center position
+
+The radius of curvature computation is the same as the one provided by Udacity and is in calc_roc() function. The position of vehicle w.r.t center is calculated as difference between lane center and image center. This is in the detect_lanes() function.
+
+
+#### 6. Lane overlay
+
+This code again is the same as the one in Udacity's example. Here's the final output image.
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/output.png?raw=true)
+
+---
+
+### Pipeline processing video input
+
+![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/project_video_out.mp4?raw=true)
+
+---
+
+### Discussion
+
