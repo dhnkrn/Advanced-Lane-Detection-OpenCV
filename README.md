@@ -97,8 +97,6 @@ This code again is the same as the one in Udacity's example. Here's the final ou
 ### Pipeline processing for a video input
 
 See project_video_out.mp4
-![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/project_video_out.mp4?raw=true)
-
 
 ---
 
