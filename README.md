@@ -33,8 +33,8 @@ The reference object is a chessboard and the reference "object points" are the (
 
 ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/camera_calibration.png?raw=true)
 
-The output `imgpoints` is fed to `cv2.calibrateCamera()` function to compute the camera calibration and distortion coefficients. Correcting distortion using the computed coefficients with `cv2.undistort()` looks like this. The difference in edge pixels is easy to notice.
- ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/distortion_correction.png?raw=true)
+The output `imgpoints` is fed to `cv2.calibrateCamera()` function to compute the camera calibration and distortion coefficients. Correcting distortion using the computed coefficients with `cv2.undistort()` looks like this.
+ ![alt text](https://github.com/dhnkrn/Advanced-Lane-Detection-OpenCV/blob/master/output_images/camera_cal_undistort.png?raw=true)
 
 ### Pipeline for image processing individual frames
 
@@ -94,7 +94,7 @@ This code again is the same as the one in Udacity's example. Here's the final ou
 
 ---
 
-### Pipeline processing for a video input
+### Pipeline processing for video input
 
 See project_video_out.mp4
 
@@ -102,3 +102,4 @@ See project_video_out.mp4
 
 ### Discussion
 The Computer Vision approach employed in this project to detect lanes comprises of several hand-tuned parameters. This is susceptible to failing on inputs that the model was not optimized for. This was very evident, in my case, when the pipleline failed to detect lanes when the lines in the frame were short. This happens in cases when the car's front has just passed lane, which subsequently led to jitters every few frames. Apart from not detecting lanes, sometimes the pipeline detects lanes even if there aren't enough points to fit a line. This leads to lines in that are way off in direction. I had to resort to relying on the past data to handle such cases. Relying on past data could be again problematic when there are sharp turns involved. The running average filter takes more time to adjust to the new angles. These are the problems I noticed while detecting lanes in an input video that has clearly marked lanes, lanes are of only two colors and shot in sunny weather. This pipeline would completely fail if the pixel distribution changes due to overcast conditions, bad lane markings or several other possible conditions. However, one particular advantage in the CV approach is the lower demand on data and computational resources.
+
